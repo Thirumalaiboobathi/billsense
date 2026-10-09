@@ -1,0 +1,700 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Billsense</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #f4f6f9; --card: #ffffff; --card2: #f8fafc; --text: #151c28; --muted: #5b6678; --border: #e2e6ed;
+  --shadow: 0 1px 2px rgba(16,24,40,.06), 0 1px 3px rgba(16,24,40,.04);
+  --accent: #2563eb; --accent-text: #ffffff; --next-bg: #eef4ff; --next-border: #2563eb;
+  --green-bg: #dcf5e4; --green-fg: #0f5132; --amber-bg: #fdf0c8; --amber-fg: #6b4300; --red-bg: #fddede; --red-fg: #8a1414;
+  --good: #0f7a3d; --bad: #c0261d;
+  --c-prev: #aab4c3; --c-cur: #2563eb; --grid: #e6eaf0; --tick: #5b6678; --skel: #e9edf3;
+}
+:root[data-theme="dark"] {
+  --bg: #0e131a; --card: #171f29; --card2: #1c2531; --text: #e8edf3; --muted: #9aa6b6; --border: #2a3441;
+  --shadow: 0 1px 2px rgba(0,0,0,.4);
+  --accent: #5b9bff; --accent-text: #0b1220; --next-bg: #14263f; --next-border: #5b9bff;
+  --green-bg: #12361f; --green-fg: #8ff0b0; --amber-bg: #3d2f08; --amber-fg: #fcd34d; --red-bg: #451616; --red-fg: #ffb4b4;
+  --good: #6ee7a0; --bad: #ff8a80;
+  --c-prev: #55657c; --c-cur: #5b9bff; --grid: #263140; --tick: #9aa6b6; --skel: #232d3a;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e131a; --card: #171f29; --card2: #1c2531; --text: #e8edf3; --muted: #9aa6b6; --border: #2a3441;
+    --shadow: 0 1px 2px rgba(0,0,0,.4);
+    --accent: #5b9bff; --accent-text: #0b1220; --next-bg: #14263f; --next-border: #5b9bff;
+    --green-bg: #12361f; --green-fg: #8ff0b0; --amber-bg: #3d2f08; --amber-fg: #fcd34d; --red-bg: #451616; --red-fg: #ffb4b4;
+    --good: #6ee7a0; --bad: #ff8a80;
+    --c-prev: #55657c; --c-cur: #5b9bff; --grid: #263140; --tick: #9aa6b6; --skel: #232d3a;
+  }
+}
+* { box-sizing: border-box; transition: background-color 150ms, color 150ms, border-color 150ms; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--text); font: 16px/1.5 Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; overflow-x: hidden; }
+.wrap { max-width: 960px; margin: 0 auto; padding: 16px; min-height: 100vh; display: flex; flex-direction: column; }
+header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
+h1 { margin: 0; font-size: 1.5rem; letter-spacing: -0.02em; }
+.sub { margin: 0; color: var(--muted); font-size: .95rem; }
+.hbtns { display: flex; gap: 8px; flex: none; }
+.icon-btn { background: var(--card); border: 1px solid var(--border); color: var(--text); height: 40px; min-width: 40px; padding: 0 12px; border-radius: 20px; font: inherit; font-size: .9rem; cursor: pointer; box-shadow: var(--shadow); }
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--card); box-shadow: var(--shadow); }
+.seg button { border: 0; background: transparent; color: var(--muted); padding: 8px 16px; font: inherit; font-size: .9rem; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-text); font-weight: 600; }
+.keybox { display: none; margin-top: 8px; gap: 8px 16px; align-items: center; flex-wrap: wrap; font-size: .85rem; }
+.keybox.show { display: flex; }
+.keybox input[type=password] { flex: 1; min-width: 180px; }
+.keybox .help { flex-basis: 100%; color: var(--muted); }
+.keybox label { color: var(--muted); display: flex; gap: 6px; align-items: center; }
+input[type=password], textarea { font: inherit; color: var(--text); background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; }
+input:focus, textarea:focus, button:focus-visible, a:focus-visible, .gl:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+button.link { background: none; border: 0; color: var(--accent); cursor: pointer; font: inherit; padding: 0; text-decoration: underline; }
+.trust { display: none; margin-bottom: 16px; padding: 16px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); font-size: .9rem; }
+.trust.show { display: block; }
+.trust h2 { margin: 0 0 8px; font-size: 1rem; }
+.trust ul { margin: 0; padding-left: 20px; } .trust li { margin: 4px 0; }
+.trust code { background: var(--card2); border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; font-size: .8rem; overflow-wrap: anywhere; }
+#chat { flex: 1; padding: 16px 0; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.welcome { color: var(--muted); }
+.starters { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.chip, .starters button { background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 999px; padding: 8px 16px; font: inherit; font-size: .9rem; cursor: pointer; box-shadow: var(--shadow); }
+.chip:hover, .starters button:hover { border-color: var(--accent); }
+.first { padding: 24px 16px; }
+.first h2 { margin: 0 0 8px; font-size: 1.25rem; letter-spacing: -0.01em; }
+.first p { margin: 0 0 16px; color: var(--muted); }
+.legend { list-style: none; margin: 0 0 24px; padding: 0; display: grid; gap: 8px; }
+.legend li { display: flex; gap: 12px; align-items: center; padding: 8px 12px; border-radius: 8px; font-size: .95rem; }
+.legend li.green { background: var(--green-bg); color: var(--green-fg); } .legend li.amber { background: var(--amber-bg); color: var(--amber-fg); } .legend li.red { background: var(--red-bg); color: var(--red-fg); }
+.legend b { white-space: nowrap; }
+.cta { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.primary { background: var(--accent); color: var(--accent-text); border: 0; border-radius: 8px; padding: 12px 24px; font: inherit; font-weight: 600; cursor: pointer; }
+.msg-user { align-self: flex-end; background: var(--accent); color: var(--accent-text); padding: 8px 16px; border-radius: 16px 16px 4px 16px; max-width: 85%; white-space: pre-wrap; overflow-wrap: anywhere; }
+.report { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.micro { margin: 0 0 -8px; font-size: .9rem; font-weight: 600; color: var(--muted); }
+.banner { display: flex; gap: 16px; align-items: center; padding: 16px; border-radius: 12px; border: 1px solid var(--border); }
+.banner.green { background: var(--green-bg); color: var(--green-fg); } .banner.amber { background: var(--amber-bg); color: var(--amber-fg); } .banner.red { background: var(--red-bg); color: var(--red-fg); }
+.banner .ico { font-size: 2rem; line-height: 1; }
+.banner .vl { font-size: 1.15rem; font-weight: 700; line-height: 1.35; overflow-wrap: anywhere; }
+.banner .meta { font-size: .8rem; opacity: .85; margin-top: 4px; }
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.kpi, .panel { background: var(--card); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); padding: 16px; min-width: 0; }
+.kpi .lab { font-size: .75rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; font-weight: 600; }
+.kpi .val { font-size: 1.5rem; font-weight: 700; margin-top: 4px; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+.kpi .val.up { color: var(--bad); } .kpi .val.down { color: var(--good); }
+.charts { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; }
+.panel h3 { margin: 0 0 8px; font-size: .95rem; }
+.panel .note { margin: 8px 0 0; font-size: .8rem; color: var(--muted); }
+.cwrap { position: relative; width: 100%; }
+table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+th { text-align: left; color: var(--muted); font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; padding: 8px; border-bottom: 1px solid var(--border); }
+td { padding: 8px; border-bottom: 1px solid var(--border); overflow-wrap: anywhere; }
+tr:last-child td { border-bottom: 0; } td.num, th.num { text-align: right; white-space: nowrap; }
+.badge { display: inline-block; margin-left: 8px; padding: 0 8px; border-radius: 999px; background: var(--red-bg); color: var(--red-fg); font-size: .7rem; font-weight: 700; white-space: nowrap; }
+.clear { text-align: center; padding: 24px 16px; }
+.clear svg { width: 120px; height: 80px; margin-bottom: 8px; }
+.ill .sun { fill: var(--amber-fg); opacity: .8; } .ill .h1 { fill: var(--green-bg); stroke: var(--good); stroke-width: 2; } .ill .h2 { fill: var(--card2); stroke: var(--good); stroke-width: 2; opacity: .9; } .ill .leaf { fill: var(--good); }
+.clear b { display: block; font-size: 1.1rem; }
+.clear span { color: var(--muted); font-size: .9rem; }
+.gl { border-bottom: 1px dotted currentColor; cursor: help; }
+.pop { position: fixed; z-index: 10; max-width: 280px; background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,.25); padding: 8px 12px; font-size: .85rem; display: none; }
+.pop.show { display: block; }
+.glrow { margin: 8px 0 0; font-size: .8rem; color: var(--muted); }
+.glrow .gl { margin-right: 12px; color: var(--text); }
+.fix { margin: 0 0 12px; padding: 8px 12px; border-radius: 8px; background: var(--card2); border: 1px solid var(--border); font-weight: 600; font-size: .95rem; }
+.answer ul { margin: 0; padding-left: 20px; } .answer li { margin: 4px 0; overflow-wrap: anywhere; }
+.next { margin-top: 16px; padding: 12px 16px; background: var(--next-bg); border-left: 4px solid var(--next-border); border-radius: 8px; overflow-wrap: anywhere; }
+.next b { display: block; font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.codebox { margin-top: 16px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.codebox .ch { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 4px 12px; background: var(--card2); font-size: .75rem; font-weight: 600; color: var(--muted); }
+.codebox pre { margin: 0; padding: 12px; overflow-x: auto; font: .8rem/1.5 ui-monospace, Consolas, monospace; background: var(--card); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.fb { display: flex; align-items: center; gap: 8px; font-size: .85rem; color: var(--muted); }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; justify-content: space-between; color: var(--muted); font-size: .8rem; }
+.actions .btns { display: flex; gap: 8px; }
+.btn { display: inline-block; background: var(--card); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 8px 12px; font: inherit; font-size: .85rem; cursor: pointer; text-decoration: none; }
+.tip { display: flex; gap: 12px; justify-content: space-between; align-items: center; background: var(--next-bg); border: 1px solid var(--next-border); border-radius: 8px; padding: 8px 12px; font-size: .9rem; }
+.errcard { border: 1px solid var(--red-fg); background: var(--red-bg); color: var(--red-fg); border-radius: 12px; padding: 16px; overflow-wrap: anywhere; }
+.errcard.soft { border-color: var(--border); background: var(--card); color: var(--text); box-shadow: var(--shadow); }
+.errcard h4 { margin: 0 0 8px; font-size: 1rem; }
+.errcard p { margin: 0 0 8px; font-size: .9rem; }
+.errcard p b { font-weight: 600; }
+.errcard .btn { margin-top: 8px; background: var(--card); color: var(--text); }
+.loading { color: var(--muted); display: flex; align-items: center; gap: 8px; font-size: .9rem; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: pulse 1s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { opacity: .25; transform: scale(.8); } 50% { opacity: 1; transform: scale(1.1); } }
+.skel { background: var(--skel); border-radius: 12px; animation: shimmer 1.4s ease-in-out infinite; }
+@keyframes shimmer { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+form { position: sticky; bottom: 0; background: var(--bg); padding: 8px 0 16px; display: flex; gap: 8px; align-items: flex-end; }
+textarea { flex: 1; resize: none; max-height: 120px; }
+.send { background: var(--accent); color: var(--accent-text); border: 0; border-radius: 8px; padding: 8px 24px; height: 42px; font: inherit; font-weight: 600; cursor: pointer; }
+:disabled { opacity: .6; cursor: not-allowed; }
+@media (max-width: 720px) {
+  .kpis { grid-template-columns: repeat(2, 1fr); }
+  .charts { grid-template-columns: 1fr; }
+  .banner .ico { font-size: 1.6rem; }
+}
+@media (prefers-reduced-motion: reduce) { .dot, .skel { animation: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Billsense</h1>
+      <p class="sub">Your AWS bill, explained calmly.</p>
+    </div>
+    <div class="hbtns">
+      <button id="shield" class="icon-btn" type="button" aria-expanded="false" aria-controls="trust">🛡️ Security</button>
+      <button id="theme" class="icon-btn" type="button" aria-label="Toggle dark mode">🌙</button>
+    </div>
+  </header>
+
+  <section class="trust" id="trust" aria-label="Security">
+    <h2>How Billsense protects your data</h2>
+    <ul>
+      <li><b>Read-only IAM role.</b> Allowed actions: <code>ce:GetCostAndUsage</code> <code>ec2:Describe*</code> <code>bedrock:InvokeModel</code> <code>bedrock:InvokeModelWithResponseStream</code> (Nova Pro only). Nothing can be changed or deleted.</li>
+      <li><b>No AWS keys accepted.</b> Keys pasted here are blocked before they reach the model or any log.</li>
+      <li><b>Account and resource IDs masked.</b> Only the last 4 characters are ever shown.</li>
+      <li><b>Nothing stored server-side.</b> No database; questions and answers are not logged.</li>
+      <li><b>Rate-limited.</b> Too many requests or wrong passcodes are temporarily blocked.</li>
+    </ul>
+  </section>
+
+  <div>
+    <div class="seg" role="group" aria-label="Data source">
+      <button type="button" id="m-demo" aria-pressed="true">Demo data</button>
+      <button type="button" id="m-real" aria-pressed="false">My account</button>
+    </div>
+    <div class="keybox" id="keybox">
+      <input id="key" type="password" placeholder="Owner passcode" autocomplete="off" aria-label="Owner passcode">
+      <label id="remwrap"><input type="checkbox" id="remember"> Remember on this device</label>
+      <button type="button" class="link" id="forget" hidden>forget passcode</button>
+      <div class="help">Billsense never asks for AWS access keys. It reads cost data through a read-only IAM role.</div>
+    </div>
+  </div>
+
+  <main id="chat" aria-live="polite"></main>
+
+  <form id="form">
+    <textarea id="q" rows="1" maxlength="500" placeholder="Ask about your bill…" aria-label="Your question"></textarea>
+    <button class="send" id="send" type="submit">Ask</button>
+  </form>
+</div>
+<div class="pop" id="pop" role="tooltip"></div>
+
+<script>
+(function () {
+  var STARTERS = ["Why did my bill go up?", "Am I paying for anything idle?", "What's my biggest cost this month?"];
+  var SECURITY_MSG = "That looks like an AWS access key. I didn't send it anywhere. If it's real, deactivate and rotate it in IAM now, and never paste keys into web apps.";
+  var ROTATE_URL = "https://docs.aws.amazon.com/IAM/latest/UserGuide/id-credentials-access-keys-update.html";
+  var MICRO = { green: "Nothing to worry about.", amber: "Worth five minutes.", red: "Take a breath. Here's what to do first." };
+  var LOADING = ["Reading your bill…", "Checking for anything left running…", "Doing the math…"];
+  var GLOSS = {
+    "NAT Gateway": "lets private servers reach the internet. Bills every hour it exists, even when idle.",
+    "Elastic IP": "a fixed public IP address. Free while attached to a running server, billed hourly when it isn't.",
+    "EBS": "Elastic Block Store: virtual disks for servers. Bills per GB every month, even when not attached to anything.",
+    "EC2": "virtual servers. Bills per second while an instance is running.",
+    "S3": "file storage. Bills per GB stored, plus requests and data sent out.",
+    "CloudWatch": "logs and metrics. Bills for logs ingested and stored, custom metrics and alarms.",
+    "Lambda": "runs code without servers. Bills per request and per millisecond; small use is free.",
+    "Data Transfer": "data leaving AWS or crossing regions. Bills per GB; incoming data is mostly free.",
+    "Route 53": "DNS. Bills per domain zone each month, plus queries."
+  };
+  var TERM_RE = /\b(NAT Gateway|Elastic IP|CloudWatch|Data Transfer|Route 53|EC2|EBS|S3|Lambda)\b/;
+  var KEY_ID_RE = /(?:AKIA|ASIA)[A-Z0-9]{16}/;
+  var SECRET_RE = /(?:^|[^A-Za-z0-9\/+=])([A-Za-z0-9\/+=]{40})(?![A-Za-z0-9\/+=])/g;
+  var $ = function (id) { return document.getElementById(id); };
+  var chat = $("chat"), q = $("q"), send = $("send"), keyInput = $("key"), keybox = $("keybox"), forget = $("forget"), pop = $("pop");
+  var demo = true, busy = false, locked = false, charts = [], reports = [], history = [], lastQuestion = "";
+  var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function sget(area, k) { try { return window[area].getItem(k); } catch (e) { return null; } }
+  function sset(area, k, v) { try { window[area].setItem(k, v); } catch (e) {} }
+  function sdel(area, k) { try { window[area].removeItem(k); } catch (e) {} }
+  function getKey() { return sget("sessionStorage", "billsense-key") || sget("localStorage", "billsense-key") || ""; }
+
+  function looksLikeCredential(t) {
+    if (!t) return false;
+    if (KEY_ID_RE.test(t)) return true;
+    SECRET_RE.lastIndex = 0;
+    var m;
+    while ((m = SECRET_RE.exec(t))) { if (/\d/.test(m[1]) && /[A-Za-z]/.test(m[1])) return true; }
+    return false;
+  }
+
+  // ---- theme
+  var root = document.documentElement, themeBtn = $("theme");
+  function isDark() {
+    var t = root.getAttribute("data-theme");
+    if (t) return t === "dark";
+    return !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  }
+  function cssVar(n) { return getComputedStyle(root).getPropertyValue(n).trim(); }
+  function paintToggle() { themeBtn.textContent = isDark() ? "☀️" : "🌙"; }
+  function themeCharts() {
+    // Re-render each report so chart colors are rebuilt from the new theme
+    charts.forEach(function (c) { try { c.chart.destroy(); } catch (e) {} });
+    charts = [];
+    reports.forEach(function (r) {
+      try { var n = renderReport(r.resp, r.question); r.node.replaceWith(n); r.node = n; } catch (e) {}
+    });
+  }
+  var saved = sget("localStorage", "billsense-theme");
+  if (saved === "dark" || saved === "light") root.setAttribute("data-theme", saved);
+  paintToggle();
+  themeBtn.addEventListener("click", function () {
+    var next = isDark() ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    sset("localStorage", "billsense-theme", next);
+    paintToggle(); themeCharts();
+  });
+  if (window.matchMedia) {
+    var mq = window.matchMedia("(prefers-color-scheme: dark)");
+    if (mq.addEventListener) mq.addEventListener("change", function () { paintToggle(); themeCharts(); });
+  }
+
+  $("shield").addEventListener("click", function () {
+    var t = $("trust"), open = !t.classList.contains("show");
+    t.classList.toggle("show", open); this.setAttribute("aria-expanded", String(open));
+  });
+
+  // ---- mode + passcode
+  function paintKey() {
+    var has = !!getKey();
+    keybox.classList.toggle("show", !demo);
+    keyInput.hidden = has; $("remwrap").hidden = has; forget.hidden = !has;
+    if (has) keyInput.value = "";
+  }
+  function setMode(isDemo) {
+    demo = isDemo;
+    $("m-demo").setAttribute("aria-pressed", String(isDemo));
+    $("m-real").setAttribute("aria-pressed", String(!isDemo));
+    paintKey();
+  }
+  $("m-demo").addEventListener("click", function () { setMode(true); });
+  $("m-real").addEventListener("click", function () { setMode(false); if (!getKey()) keyInput.focus(); });
+  forget.addEventListener("click", function () { sdel("sessionStorage", "billsense-key"); sdel("localStorage", "billsense-key"); paintKey(); keyInput.focus(); });
+
+  // ---- helpers
+  function el(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined && text !== null) n.textContent = text; return n; }
+  function svgEl(tag, attrs) { var n = document.createElementNS("http://www.w3.org/2000/svg", tag); for (var k in attrs) n.setAttribute(k, attrs[k]); return n; }
+  function scrollEnd() { window.scrollTo({ top: document.body.scrollHeight, behavior: reduced ? "auto" : "smooth" }); }
+  function clean(s) { return String(s).replace(/[`*_]/g, ""); }
+  function money(n) { return "$" + Number(n).toFixed(2); }
+  function short(n) {
+    var s = String(n).replace(/^(Amazon|AWS)\s+/, "");
+    var map = [[/NAT/i, "NAT Gateway"], [/Elastic Compute Cloud - Compute/, "EC2 compute"], [/Elastic Compute Cloud - EBS|EBS/, "EBS"],
+      [/Elastic Compute Cloud/, "EC2"], [/Simple Storage Service/, "S3"], [/Relational Database/, "RDS"], [/Virtual Private Cloud/, "VPC"]];
+    for (var i = 0; i < map.length; i++) if (map[i][0].test(s)) return map[i][1];
+    return s.length > 24 ? s.slice(0, 23) + "…" : s;
+  }
+  function countUp(node, target, fmt) {
+    if (reduced) { node.textContent = fmt(target); return; }
+    var t0 = null;
+    function step(ts) { if (t0 === null) t0 = ts; var p = Math.min((ts - t0) / 400, 1); node.textContent = fmt(target * p); if (p < 1) requestAnimationFrame(step); }
+    requestAnimationFrame(step);
+  }
+
+  // ---- glossary: dotted-underline terms with a tap/hover popover (text only, never innerHTML)
+  var popFor = null;
+  function hidePop() { pop.classList.remove("show"); popFor = null; }
+  function showPop(target, term) {
+    if (popFor === target) { hidePop(); return; }
+    pop.textContent = "";
+    pop.appendChild(el("b", null, term)); pop.appendChild(document.createTextNode(": " + GLOSS[term]));
+    pop.classList.add("show"); popFor = target;
+    var r = target.getBoundingClientRect(), w = pop.offsetWidth;
+    pop.style.left = Math.max(8, Math.min(r.left, window.innerWidth - w - 8)) + "px";
+    pop.style.top = (r.bottom + 8) + "px";
+  }
+  function glossTerm(term) {
+    var s = el("span", "gl", term); s.tabIndex = 0; s.setAttribute("role", "button");
+    s.addEventListener("click", function (e) { e.stopPropagation(); showPop(s, term); });
+    s.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); showPop(s, term); } });
+    return s;
+  }
+  function addText(parent, text) {
+    var parts = String(text).split(new RegExp(TERM_RE.source, "g"));
+    parts.forEach(function (p, i) {
+      if (i % 2 === 1 && GLOSS[p]) parent.appendChild(glossTerm(p));
+      else if (p) parent.appendChild(document.createTextNode(p));
+    });
+    return parent;
+  }
+  document.addEventListener("click", hidePop);
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") hidePop(); });
+  window.addEventListener("scroll", hidePop, { passive: true });
+
+  function parse(answer) {
+    var code = "", m = answer.match(/```[a-zA-Z]*\n?([\s\S]*?)```/);
+    if (m) { code = m[1].trim(); answer = answer.replace(m[0], ""); }
+    var lines = answer.split(/\r?\n/).map(function (l) { return l.trim(); }).filter(Boolean);
+    var out = { head: lines.shift() || "", bullets: [], next: "", code: code };
+    lines.forEach(function (l) {
+      var n = l.match(/^next step:\s*(.*)$/i);
+      if (n) out.next = n[1]; else out.bullets.push(l.replace(/^[-•*]\s*/, ""));
+    });
+    return out;
+  }
+
+  // ---- charts
+  function baseOpts() {
+    return { responsive: true, maintainAspectRatio: false, animation: reduced ? false : { duration: 400 },
+      plugins: { legend: { labels: { boxWidth: 12, font: { family: "Inter" } } }, tooltip: { callbacks: {} } },
+      scales: { x: { ticks: {}, grid: {} }, y: { ticks: {}, grid: {} } } };
+  }
+  function themeAxes(ch) {
+    var tick = cssVar("--tick"), grid = cssVar("--grid");
+    ch.options.plugins.legend.labels.color = tick;
+    ["x", "y"].forEach(function (a) { ch.options.scales[a].ticks.color = tick; ch.options.scales[a].grid.color = grid; });
+  }
+  function servicesChart(host, services) {
+    var wrap = el("div", "cwrap"); wrap.style.height = Math.max(160, 56 + services.length * 52) + "px";
+    var cv = document.createElement("canvas"); wrap.appendChild(cv); host.appendChild(wrap);
+    var opts = baseOpts(); opts.indexAxis = "y";
+    opts.plugins.tooltip.callbacks.label = function (c) { return c.dataset.label + ": " + money(c.parsed.x); };
+    opts.scales.x.ticks.callback = function (v) { return "$" + v; };
+    var ch = new Chart(cv, { type: "bar", options: opts, data: {
+      labels: services.map(function (s) { return short(s.name); }),
+      datasets: [
+        { label: "Previous", data: services.map(function (s) { return s.previous; }), backgroundColor: cssVar("--c-prev"), borderRadius: 4 },
+        { label: "Current", data: services.map(function (s) { return s.current; }), backgroundColor: cssVar("--c-cur"), borderRadius: 4 }
+      ] } });
+    var fn = function (c) { themeAxes(c); c.data.datasets[0].backgroundColor = cssVar("--c-prev"); c.data.datasets[1].backgroundColor = cssVar("--c-cur"); };
+    fn(ch); ch.update("none"); charts.push({ chart: ch, fn: fn });
+    var seen = {}, terms = [];
+    services.forEach(function (s) { var m = s.name.match(TERM_RE); if (m && GLOSS[m[1]] && !seen[m[1]]) { seen[m[1]] = 1; terms.push(m[1]); } });
+    if (terms.length) {
+      var row = el("p", "glrow", "Tap to learn what each one is: ");
+      terms.forEach(function (t) { row.appendChild(glossTerm(t)); });
+      host.appendChild(row);
+    }
+  }
+  function dailyChart(host, daily) {
+    var jump = -1, jumpAmt = 0;
+    for (var i = 1; i < daily.length; i++) { var d = daily[i].amount - daily[i - 1].amount; if (d > jumpAmt) { jumpAmt = d; jump = i; } }
+    var wrap = el("div", "cwrap"); wrap.style.height = "220px";
+    var cv = document.createElement("canvas"); wrap.appendChild(cv); host.appendChild(wrap);
+    var opts = baseOpts(); opts.plugins.legend.display = false;
+    opts.plugins.tooltip.callbacks.label = function (c) { return money(c.parsed.y); };
+    opts.scales.y.ticks.callback = function (v) { return "$" + v; };
+    opts.scales.x.ticks.maxTicksLimit = 6;
+    var ch = new Chart(cv, { type: "line", options: opts, data: {
+      labels: daily.map(function (d) { return d.date.slice(5); }),
+      datasets: [{ label: "Daily spend", data: daily.map(function (d) { return d.amount; }), borderWidth: 2, tension: 0.25, pointRadius: 2 }] } });
+    var fn = function (c) {
+      themeAxes(c);
+      var ds = c.data.datasets[0], cur = cssVar("--c-cur"), bad = cssVar("--bad");
+      ds.borderColor = cur; ds.backgroundColor = cur;
+      ds.pointBackgroundColor = daily.map(function (_, k) { return k === jump ? bad : cur; });
+      ds.pointRadius = daily.map(function (_, k) { return k === jump ? 7 : 2; });
+    };
+    fn(ch); ch.update("none"); charts.push({ chart: ch, fn: fn });
+    if (jump > 0) host.appendChild(el("p", "note", "Biggest day-over-day jump: " + daily[jump].date + " (+" + money(jumpAmt) + ")"));
+  }
+
+  // ---- report card
+  function kpi(label, target, fmt, cls) {
+    var k = el("div", "kpi"); k.appendChild(el("div", "lab", label));
+    var v = el("div", "val" + (cls ? " " + cls : ""), fmt(0)); k.appendChild(v);
+    countUp(v, target, fmt); return k;
+  }
+  function illustration() {
+    var s = svgEl("svg", { viewBox: "0 0 120 80", "aria-hidden": "true", "class": "ill" });
+    s.appendChild(svgEl("circle", { "class": "sun", cx: "88", cy: "24", r: "12" }));
+    s.appendChild(svgEl("path", { "class": "h2", d: "M0 70 Q30 38 60 62 T120 58 V80 H0 Z" }));
+    s.appendChild(svgEl("path", { "class": "h1", d: "M0 76 Q35 50 70 70 T120 70 V80 H0 Z" }));
+    s.appendChild(svgEl("path", { "class": "leaf", d: "M30 56 q6 -12 14 -4 q-4 10 -14 4 Z" }));
+    return s;
+  }
+  function followUps(data, verdict, allClear) {
+    var out = [], idle = Array.isArray(data.idle) ? data.idle : [];
+    var has = function (t) { return idle.some(function (r) { return r.type.indexOf(t) === 0; }); };
+    if (has("NAT Gateway")) { out.push("How do I safely remove the NAT Gateway?"); out.push("What happens if I leave it?"); }
+    else if (has("Unattached EBS")) { out.push("How do I safely delete the unattached EBS volume?"); out.push("What happens if I leave it?"); }
+    else if (has("Unassociated Elastic IP")) { out.push("How do I release the unused Elastic IP?"); out.push("What happens if I leave it?"); }
+    if (!data.idle) out.push("Am I paying for anything idle?"); else if (idle.length) out.push("What else is idle?");
+    if (!data.summary || allClear) out.push("What's my biggest cost this month?");
+    return out.filter(function (x, i) { return out.indexOf(x) === i; }).slice(0, 3);
+  }
+  function renderReport(resp, question) {
+    var data = resp.data || {}, text = String(resp.answer || ""), p = parse(text);
+    var verdict = resp.verdict === "green" || resp.verdict === "red" ? resp.verdict : "amber";
+    var icon = verdict === "green" ? "🟢" : verdict === "red" ? "🔴" : "🟡";
+    var box = el("div", "report");
+
+    box.appendChild(el("p", "micro", MICRO[verdict]));
+    var banner = el("div", "banner " + verdict);
+    banner.appendChild(el("div", "ico", icon));
+    var bt = el("div");
+    bt.appendChild(addText(el("div", "vl"), clean(p.head.replace(/^[🟢🟡🔴]\s*/u, ""))));
+    bt.appendChild(el("div", "meta", "As of " + new Date().toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }) + " · cost data lags ~24h"));
+    banner.appendChild(bt); box.appendChild(banner);
+
+    var idle = Array.isArray(data.idle) ? data.idle : null;
+    var services = Array.isArray(data.services) ? data.services : [];
+    var daily = Array.isArray(data.daily) ? data.daily : [];
+    var s = data.summary || null;
+    var totalSpend = services.reduce(function (a, x) { return a + Math.abs(x.current) + Math.abs(x.previous); }, 0);
+    var allClear = verdict === "green" && (!idle || idle.length === 0) && totalSpend < 1 && !!(idle || s);
+
+    if (s || idle) {
+      var kp = el("div", "kpis");
+      if (s) {
+        kp.appendChild(kpi("This period", s.current_total, money));
+        kp.appendChild(kpi("Previous period", s.previous_total, money));
+        var ch = s.change_abs, cls = ch > 0.004 ? "up" : ch < -0.004 ? "down" : "";
+        var arrow = ch > 0.004 ? "▲ " : ch < -0.004 ? "▼ " : "";
+        var pct = s.change_pct === null || s.change_pct === undefined ? "" : " (" + (ch >= 0 ? "+" : "") + s.change_pct.toFixed(1) + "%)";
+        kp.appendChild(kpi("Change", ch, function (x) { return arrow + (x < 0 ? "-" : "") + money(Math.abs(x)) + pct; }, cls));
+      }
+      if (idle) kp.appendChild(kpi("Idle waste / month", data.idle_total_monthly_usd || 0, function (x) { return "~" + money(x); }, (data.idle_total_monthly_usd || 0) > 0 ? "up" : ""));
+      box.appendChild(kp);
+    }
+
+    if (allClear) {
+      var c = el("div", "panel clear"); c.appendChild(illustration());
+      c.appendChild(el("b", null, "All clear."));
+      c.appendChild(el("span", null, "Your bill looks exactly like last time."));
+      box.appendChild(c);
+    } else {
+      if (typeof Chart !== "undefined" && (services.length || daily.length)) {
+        var grid = el("div", "charts");
+        if (services.length) { var pa = el("div", "panel"); pa.appendChild(el("h3", null, "Where the money went")); servicesChart(pa, services); grid.appendChild(pa); }
+        if (daily.length > 1) { var pb = el("div", "panel"); pb.appendChild(el("h3", null, "Daily spend")); dailyChart(pb, daily); grid.appendChild(pb); }
+        else grid.style.gridTemplateColumns = "1fr";
+        box.appendChild(grid);
+      }
+      if (idle && idle.length) {
+        var pi = el("div", "panel"); pi.appendChild(el("h3", null, "Idle resources"));
+        var tbl = el("table"), thead = el("thead"), hr = el("tr");
+        ["Type", "ID", "Region", "Est. $/mo"].forEach(function (h, i) { hr.appendChild(el("th", i === 3 ? "num" : null, h)); });
+        thead.appendChild(hr); tbl.appendChild(thead);
+        var max = idle.reduce(function (a, r) { return Math.max(a, r.est_monthly_usd); }, 0), tb = el("tbody"), flagged = false;
+        idle.forEach(function (r) {
+          var tr = el("tr"), t = addText(el("td"), r.type);
+          if (!flagged && r.est_monthly_usd === max) { t.appendChild(el("span", "badge", "Fix first")); flagged = true; }
+          tr.appendChild(t); tr.appendChild(el("td", null, r.id_masked)); tr.appendChild(el("td", null, r.region));
+          tr.appendChild(el("td", "num", money(r.est_monthly_usd))); tb.appendChild(tr);
+        });
+        tbl.appendChild(tb); pi.appendChild(tbl);
+        if (data.idle_note) pi.appendChild(el("p", "note", data.idle_note));
+        box.appendChild(pi);
+      }
+    }
+
+    var ans = el("div", "panel answer");
+    if (verdict !== "green" && idle && idle.length) {
+      var top = idle.reduce(function (a, r) { return r.est_monthly_usd > a.est_monthly_usd ? r : a; }, idle[0]);
+      var fx = el("p", "fix"); fx.appendChild(document.createTextNode("If you fix this: Fix the top item ("));
+      addText(fx, top.type); fx.appendChild(document.createTextNode(") → save ~" + money(top.est_monthly_usd) + "/month (estimate)"));
+      ans.appendChild(fx);
+    }
+    if (p.bullets.length) { var ul = el("ul"); p.bullets.forEach(function (b) { ul.appendChild(addText(el("li"), clean(b))); }); ans.appendChild(ul); }
+    if (p.next) { var nx = el("div", "next"); nx.appendChild(el("b", null, "Next step")); nx.appendChild(addText(el("span"), clean(p.next))); ans.appendChild(nx); }
+    if (p.code) {
+      var cb = el("div", "codebox"), chd = el("div", "ch"); chd.appendChild(el("span", null, "Review before running"));
+      var cc = el("button", "btn", "Copy"); cc.type = "button";
+      cc.addEventListener("click", function () { copyText(p.code, function () { cc.textContent = "Copied"; setTimeout(function () { cc.textContent = "Copy"; }, 1500); }); });
+      chd.appendChild(cc); cb.appendChild(chd);
+      var pre = el("pre"); pre.appendChild(el("code", null, p.code)); cb.appendChild(pre); ans.appendChild(cb);
+    }
+    box.appendChild(ans);
+
+    var fu = followUps(data, verdict, allClear);
+    if (fu.length) {
+      var chips = el("div", "chips");
+      fu.forEach(function (f) { var b = el("button", "chip", f); b.type = "button"; b.addEventListener("click", function () { ask(f); }); chips.appendChild(b); });
+      box.appendChild(chips);
+    }
+
+    var fb = el("div", "fb"); fb.appendChild(el("span", null, "Was this clear?"));
+    ["up", "down"].forEach(function (v) {
+      var b = el("button", "btn", v === "up" ? "👍" : "👎"); b.type = "button"; b.setAttribute("aria-label", v === "up" ? "Yes, clear" : "No, unclear");
+      b.addEventListener("click", function () {
+        fb.textContent = "Thanks!";
+        fetch("feedback", { method: "POST", headers: { "content-type": "application/json" },
+          body: JSON.stringify({ verdict: verdict, value: v, mode: demo ? "demo" : "owner" }) }).catch(function () {});
+      });
+      fb.appendChild(b);
+    });
+    box.appendChild(fb);
+
+    var act = el("div", "actions"), used = (resp.tools_used || []).map(String);
+    act.appendChild(el("span", null, used.length ? "Checked: " + used.join(" · ") : ""));
+    var btns = el("div", "btns");
+    var copy = el("button", "btn", "Copy summary"); copy.type = "button";
+    copy.addEventListener("click", function () {
+      var out = text;
+      if (s) out += "\n\nThis period " + money(s.current_total) + " · previous " + money(s.previous_total) + " · change " + money(s.change_abs);
+      if (idle) out += "\nIdle waste: ~" + money(data.idle_total_monthly_usd || 0) + "/month (estimate)";
+      copyText(out, function () { copy.textContent = "Copied"; setTimeout(function () { copy.textContent = "Copy summary"; }, 1500); });
+    });
+    var dl = el("button", "btn", "Download report (JSON)"); dl.type = "button";
+    dl.addEventListener("click", function () {
+      var rep = { generated_at: new Date().toISOString(), question: question, verdict: verdict, answer: text, tools_used: used, data: data };
+      var url = URL.createObjectURL(new Blob([JSON.stringify(rep, null, 2)], { type: "application/json" }));
+      var a = document.createElement("a"); a.href = url; a.download = "billsense-report.json"; document.body.appendChild(a); a.click();
+      document.body.removeChild(a); setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    });
+    btns.appendChild(copy); btns.appendChild(dl); act.appendChild(btns); box.appendChild(act);
+    return box;
+  }
+  function copyText(out, done) {
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(out).then(done, function () {});
+    else { var ta = document.createElement("textarea"); ta.value = out; document.body.appendChild(ta); ta.select(); try { document.execCommand("copy"); done(); } catch (e) {} document.body.removeChild(ta); }
+  }
+
+  // ---- loading, errors
+  function skeleton() {
+    var box = el("div", "report");
+    var l = el("div", "loading"), msg = el("span", null, LOADING[0]); l.appendChild(el("span", "dot")); l.appendChild(msg); box.appendChild(l);
+    var b = el("div", "skel"); b.style.height = "72px"; box.appendChild(b);
+    var k = el("div", "kpis");
+    for (var i = 0; i < 4; i++) { var x = el("div", "skel"); x.style.height = "84px"; k.appendChild(x); }
+    box.appendChild(k);
+    var c = el("div", "skel"); c.style.height = "200px"; box.appendChild(c);
+    var n = 0; box._timer = setInterval(function () { n = (n + 1) % LOADING.length; msg.textContent = LOADING[n]; }, 1500);
+    return box;
+  }
+  function errCard(o) {
+    var c = el("div", "errcard" + (o.soft ? " soft" : ""));
+    c.appendChild(el("h4", null, o.title));
+    var w1 = el("p"); w1.appendChild(el("b", null, "What happened: ")); w1.appendChild(document.createTextNode(o.what)); c.appendChild(w1);
+    var w2 = el("p"); w2.appendChild(el("b", null, "Why: ")); w2.appendChild(document.createTextNode(o.why)); c.appendChild(w2);
+    var w3 = el("p"); w3.appendChild(el("b", null, "What to do: ")); w3.appendChild(document.createTextNode(o.todo)); c.appendChild(w3);
+    if (o.href) { var a = el("a", "btn", o.label); a.href = o.href; a.target = "_blank"; a.rel = "noopener noreferrer"; c.appendChild(a); }
+    else if (o.label) { var b = el("button", "btn", o.label); b.type = "button"; b.addEventListener("click", o.onClick); c.appendChild(b); }
+    return c;
+  }
+  function retry() { ask(lastQuestion); }
+  function secureCard() {
+    return errCard({ title: "Security check", what: "That looks like an AWS access key, so I stopped.", why: "Pasting keys into web apps can expose your account. I didn't send it anywhere.",
+      todo: "If it's real, deactivate and rotate it in IAM now.", label: "How to rotate a key", href: ROTATE_URL });
+  }
+  function startCountdown(seconds, card, holder) {
+    var left = seconds; locked = true; setBusy(false);
+    function paint() { holder.textContent = "Try again in " + Math.max(1, Math.ceil(left / 60)) + " min"; }
+    paint();
+    var t = setInterval(function () {
+      left -= 1; paint();
+      if (left <= 0) { clearInterval(t); locked = false; holder.textContent = "You can ask again now."; setBusy(false); }
+    }, 1000);
+  }
+  function showError(res) {
+    var code = (res.data && res.data.code) || "", st = res.status;
+    if (st === 429 || code === "RATE_LIMITED") {
+      var h = el("strong", null, "");
+      var card = errCard({ soft: true, title: "That's a lot of questions", what: "You've reached the request limit.", why: "I limit how often each person can ask, to keep Billsense free and safe.", todo: "" });
+      card.lastChild.lastChild.appendChild(h);
+      chat.appendChild(card); startCountdown(Number(res.data.retry_after) || 600, card, h);
+    } else if (st === 401 || code === "BAD_PASSCODE") {
+      sdel("sessionStorage", "billsense-key"); sdel("localStorage", "billsense-key"); paintKey();
+      chat.appendChild(errCard({ title: "That passcode didn't work", what: "I couldn't unlock your account data.", why: "The owner passcode didn't match.",
+        todo: "Re-enter it, or switch to demo data.", label: "Re-enter passcode", onClick: function () { setMode(false); keyInput.focus(); } }));
+    } else if (code === "CREDENTIAL_DETECTED") {
+      chat.appendChild(secureCard());
+    } else if (code === "COST_ACCESS") {
+      chat.appendChild(errCard({ soft: true, title: "I can't read cost data yet", what: "Cost Explorer didn't give me any data.", why: "New accounts need Cost Explorer turned on, and data appears up to 24 hours after that.",
+        todo: "Try again tomorrow, or look around with demo data now.", label: "Try demo data", onClick: function () { setMode(true); } }));
+    } else if (code === "BEDROCK_THROTTLED" || st === 503) {
+      chat.appendChild(errCard({ soft: true, title: "I'm a bit busy", what: "I tried twice and the AI model was still busy.", why: "Lots of people are asking at once.", todo: "Wait a few seconds and try again.", label: "Retry", onClick: retry }));
+    } else if (st >= 500) {
+      chat.appendChild(errCard({ soft: true, title: "That took too long", what: "The answer didn't arrive in time.", why: "Usually a one-off hiccup on my side.", todo: "Try again.", label: "Retry", onClick: retry }));
+    } else {
+      chat.appendChild(errCard({ soft: true, title: "I couldn't answer that", what: "Something unexpected happened.", why: "It's probably temporary.", todo: "Try again in a moment.", label: "Retry", onClick: retry }));
+    }
+  }
+
+  function setBusy(b) { busy = b; q.disabled = b || locked; send.disabled = b || locked; if (!b && !locked) q.focus(); }
+
+  function context() {
+    return history.slice(-2).map(function (h) { return { q: h.q.slice(0, 1500), a: h.a.slice(0, 1500) }; });
+  }
+
+  function ask(question) {
+    question = question.trim();
+    if (!question || busy || locked) return;
+    if (looksLikeCredential(question) || looksLikeCredential(keyInput.value)) {
+      chat.appendChild(secureCard()); q.value = ""; keyInput.value = ""; scrollEnd(); return;
+    }
+    var key = getKey() || keyInput.value.trim();
+    if (!demo && !key) {
+      chat.appendChild(errCard({ soft: true, title: "I need your owner passcode", what: "My account mode is locked.", why: "Real bill data needs the owner passcode.",
+        todo: "Enter it above, or switch to demo data.", label: "Try demo data", onClick: function () { setMode(true); } }));
+      keyInput.focus(); scrollEnd(); return;
+    }
+    if (!demo && !getKey()) sset($("remember").checked ? "localStorage" : "sessionStorage", "billsense-key", key);
+    paintKey(); sset("localStorage", "billsense-seen", "1");
+    var w = $("welcome"); if (w) w.remove();
+    lastQuestion = question;
+    chat.appendChild(el("div", "msg-user", question));
+    var load = skeleton(); chat.appendChild(load);
+    q.value = ""; q.style.height = "auto"; setBusy(true); scrollEnd();
+
+    var headers = { "content-type": "application/json" };
+    if (!demo) headers["x-billsense-key"] = key;
+    fetch("ask", { method: "POST", headers: headers, body: JSON.stringify({ question: question, demo: demo, context: context() }) })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (d) { return { status: r.status, data: d }; }); })
+      .then(function (res) {
+        clearInterval(load._timer); load.remove();
+        if (res.status === 200 && res.data.answer) {
+          history.push({ q: question, a: res.data.answer });
+          var rep = renderReport(res.data, question);
+          reports.push({ node: rep, resp: res.data, question: question });
+          chat.appendChild(rep);
+          if (!sget("localStorage", "billsense-tip")) {
+            sset("localStorage", "billsense-tip", "1");
+            var tip = el("div", "tip"); tip.appendChild(el("span", null, "Tip: tap any service name to see what it is in plain English."));
+            var x = el("button", "btn", "Got it"); x.type = "button"; x.addEventListener("click", function () { tip.remove(); });
+            tip.appendChild(x); chat.appendChild(tip);
+          }
+        } else { showError(res); }
+      })
+      .catch(function () {
+        clearInterval(load._timer); load.remove();
+        chat.appendChild(errCard({ soft: true, title: "I couldn't connect", what: "The request didn't reach Billsense.", why: "Your device may be offline, or the network dropped.", todo: "Check your connection, then try again.", label: "Retry", onClick: retry }));
+      })
+      .then(function () { setBusy(false); scrollEnd(); });
+  }
+
+  // ---- first run vs returning
+  function firstRun() {
+    var card = el("div", "panel first"); card.id = "welcome";
+    card.appendChild(el("h2", null, "Welcome to Billsense"));
+    card.appendChild(el("p", null, "I read your AWS bill and explain it like a calm friend: what changed, whether to worry, and one thing to do next."));
+    var ul = el("ul", "legend");
+    [["green", "🟢", "Relax", "Nothing needs your attention."], ["amber", "🟡", "Worth a look", "Something changed or is sitting idle."], ["red", "🔴", "Act now", "Money is being wasted right now."]].forEach(function (r) {
+      var li = el("li", r[0]); li.appendChild(el("span", null, r[1])); var b = el("b", null, r[2]); li.appendChild(b); li.appendChild(el("span", null, r[3])); ul.appendChild(li);
+    });
+    card.appendChild(ul);
+    var cta = el("div", "cta"), go = el("button", "primary", "Show me with demo data"); go.type = "button";
+    go.addEventListener("click", function () { setMode(true); ask("Why did my bill go up?"); });
+    var own = el("button", "link", "Use my own account"); own.type = "button";
+    own.addEventListener("click", function () { sset("localStorage", "billsense-seen", "1"); card.remove(); chat.appendChild(returning()); setMode(false); if (!getKey()) keyInput.focus(); });
+    cta.appendChild(go); cta.appendChild(own); card.appendChild(cta);
+    return card;
+  }
+  function returning() {
+    var w = el("div", "welcome"); w.id = "welcome";
+    w.appendChild(document.createTextNode("Welcome back. Ask me about your AWS bill and I'll keep it simple. Try one of these:"));
+    var st = el("div", "starters");
+    STARTERS.forEach(function (s) { var b = el("button", null, s); b.type = "button"; b.addEventListener("click", function () { ask(s); }); st.appendChild(b); });
+    w.appendChild(st); return w;
+  }
+
+  $("form").addEventListener("submit", function (e) { e.preventDefault(); ask(q.value); });
+  q.addEventListener("keydown", function (e) { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); ask(q.value); } });
+  q.addEventListener("input", function () { q.style.height = "auto"; q.style.height = Math.min(q.scrollHeight, 120) + "px"; });
+  paintKey();
+  chat.appendChild(sget("localStorage", "billsense-seen") ? returning() : firstRun());
+})();
+</script>
+</body>
+</html>

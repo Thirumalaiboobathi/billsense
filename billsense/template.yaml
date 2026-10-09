@@ -1,0 +1,83 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Billsense - explains your AWS bill like a calm friend
+
+Parameters:
+  AccessKey:
+    Type: String
+    NoEcho: true
+    MinLength: 12
+    Description: Owner passcode required in the x-billsense-key header for real-data requests
+  ModelId:
+    Type: String
+    Default: apac.amazon.nova-pro-v1:0
+  AlertEmail:
+    Type: String
+    Description: Email that receives the 80% budget alert
+
+Resources:
+  MonthlyBudget:
+    Type: AWS::Budgets::Budget
+    Properties:
+      Budget:
+        BudgetName: billsense-monthly-10usd
+        BudgetType: COST
+        TimeUnit: MONTHLY
+        BudgetLimit:
+          Amount: 10
+          Unit: USD
+      NotificationsWithSubscribers:
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 80
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref AlertEmail
+
+  BillsenseFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .build/
+      Handler: handler.handler
+      Runtime: python3.12
+      Architectures: [x86_64]
+      MemorySize: 1024
+      Timeout: 90
+      Environment:
+        Variables:
+          MODEL_ID: !Ref ModelId
+          ACCESS_KEY: !Ref AccessKey
+          BEDROCK_REGION: !Ref AWS::Region
+      FunctionUrlConfig:
+        AuthType: NONE
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action: ce:GetCostAndUsage
+              Resource: '*'
+            - Effect: Allow
+              Action: ec2:Describe*
+              Resource: '*'
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+                - bedrock:InvokeModelWithResponseStream
+              Resource:
+                - !Sub arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:inference-profile/${ModelId}
+                - arn:aws:bedrock:*::foundation-model/amazon.nova-pro-v1:0
+
+  # Newer accounts need this in addition to InvokeFunctionUrl for public URLs
+  FunctionUrlInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref BillsenseFunction
+      Action: lambda:InvokeFunction
+      Principal: '*'
+      InvokedViaFunctionUrl: true
+
+Outputs:
+  FunctionUrl:
+    Value: !GetAtt BillsenseFunctionUrl.FunctionUrl
